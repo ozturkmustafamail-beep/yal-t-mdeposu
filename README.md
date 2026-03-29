@@ -1,4 +1,4 @@
-<![CDATA[<div align="center">
+<div align="center">
 
 # 🏗️ Yalıtım Deposu — B2B Yalıtım Malzemeleri Platformu
 
@@ -512,4 +512,3 @@ Bu proje özel lisanslıdır. Tüm hakları saklıdır.
 [Web Sitesi](https://yalitimdeposu.com) · [İletişim](mailto:info@yalitimdeposu.com) · [Destek](tel:+902121234567)
 
 </div>
-]]>
