@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if selected_category %}{{ selected_category.name }}{% else %}Ürünler{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-with-sidebar">
+    <!-- Filter Sidebar -->
+    <aside class="filter-sidebar">
+        <div class="filter-title">Filtreler</div>
+
+        <div class="filter-group">
+            <div class="filter-group-title">Kategoriler</div>
+            <a href="{% url 'products:list' %}" class="filter-link {% if not selected_category %}active{% endif %}">Tüm
+                Ürünler</a>
+            {% for cat in categories %}
+            <a href="{% url 'products:list' %}?category={{ cat.slug }}{% if search_query %}&q={{ search_query }}{% endif %}"
+                class="filter-link {% if selected_category.slug == cat.slug %}active{% endif %}">
+                {{ cat.name }}
+            </a>
+            {% endfor %}
+        </div>
+
+        <div class="filter-group">
+            <div class="filter-group-title">Markalar</div>
+            {% for brand in brands %}
+            <a href="{% url 'products:list' %}?brand={{ brand.slug }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}"
+                class="filter-link {% if selected_brand == brand.slug %}active{% endif %}">
+                {{ brand.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </aside>
+
+    <!-- Product List -->
+    <div>
+        <!-- Page Header -->
+        <div style="margin-bottom: 1.5rem;">
+            <h1 style="font-size: 1.3rem; font-weight: 700;">
+                {% if selected_category %}
+                {{ selected_category.name }}
+                {% elif search_query %}
+                "{{ search_query }}" için sonuçlar
+                {% else %}
+                Tüm Ürünler
+                {% endif %}
+            </h1>
+            <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                {{ products_with_prices|length }} ürün bulundu
+            </p>
+        </div>
+
+        {% if not user.is_authenticated %}
+        <div class="alert alert-info">
+            <strong>Toptan fiyatları görmek için</strong>
+            <a href="{% url 'accounts:register' %}">ücretsiz üye olun</a>.
+            Palet ve tır bazlı indirimli fiyatlar sadece üyelere gösterilir.
+        </div>
+        {% endif %}
+
+        <!-- Products Grid -->
+        <div class="product-grid" style="padding: 0;">
+            {% for item in products_with_prices %}
+            <a href="{% url 'products:detail' item.product.slug %}" class="product-card">
+                <div class="product-card-image">
+                    {% if item.product.image %}
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                    {% else %}
+                    <span class="product-placeholder-icon">Görsel yok</span>
+                    {% endif %}
+                </div>
+                <div class="product-card-body">
+                    <div class="product-card-brand">{{ item.product.brand.name }}</div>
+                    <div class="product-card-name">{{ item.product.name }}</div>
+                    <div class="product-card-meta">
+                        Min: {{ item.product.min_order_adet }} {{ item.product.unit }}
+                        {% if item.product.has_palet %} · Palet mevcut{% endif %}
+                        {% if item.product.has_tir %} · Tır mevcut{% endif %}
+                    </div>
+                    <div class="product-card-price">
+                        <span class="price-main">{{ item.price.unit_price|floatformat:2 }}</span>
+                        <span class="price-currency">₺</span>
+                        <span class="price-unit">/ {{ item.product.unit }}</span>
+                    </div>
+                    <div class="price-info">
+                        {% if item.price.kdv_included %}KDV dahil{% endif %}
+                        {% if item.price.shipping_included %}, nakliye dahil{% endif %}
+                    </div>
+                    {% if item.price.is_plus_discount %}
+                    <div class="price-plus">Plus %{{ item.price.discount_percent }} indirimli</div>
+                    {% endif %}
+                </div>
+            </a>
+            {% empty %}
+            <div class="text-center" style="grid-column: 1 / -1; padding: 3rem;">
+                <p style="font-size: 1rem; color: var(--text-muted);">Ürün bulunamadı</p>
+                <a href="{% url 'products:list' %}" class="btn btn-outline mt-2">Tüm ürünlere dön</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

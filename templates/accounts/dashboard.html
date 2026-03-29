@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}Hesabım{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>👋 Merhaba, {{ user.first_name|default:user.username }}</h1>
+    </div>
+
+    <!-- Plus Card -->
+    {% if user.is_plus %}
+    <div class="plus-card plus-card-active">
+        <h3>⭐ Plus Üye</h3>
+        <p>Tüm ürünlerde %3 indirim kazanıyorsunuz!</p>
+        <div class="days-left">{{ user.plus_days_remaining }} gün</div>
+        <p style="margin-top: 0.3rem; font-size: 0.8rem; opacity: 0.8;">
+            Plus üyeliğiniz {{ user.plus_until|date:"d.m.Y" }} tarihinde sona erecek.
+            10.000 TL üzeri sipariş vererek sürenizi yenileyebilirsiniz.
+        </p>
+    </div>
+    {% else %}
+    <div class="plus-card">
+        <h3>💎 Plus Üye Olun</h3>
+        <p>
+            Tek seferde 10.000 TL ve üzeri sipariş verin, 30 gün boyunca
+            tüm ürünlerde %3 indirim kazanın.
+        </p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.8;">
+            Toplam harcamanız: {{ user.total_spent|floatformat:0 }} ₺
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Addresses -->
+    <h2 style="font-size: 1.2rem; margin: 2rem 0 1rem;">📍 Kayıtlı Adreslerim</h2>
+    <div class="address-grid">
+        {% for addr in addresses %}
+        <div class="address-card {% if addr.is_default %}default{% endif %}">
+            <div class="address-card-title">
+                <span>
+                    {{ addr.title }}
+                    {% if addr.is_default %}<span class="badge badge-accent">Varsayılan</span>{% endif %}
+                </span>
+                <form method="post" action="{% url 'accounts:delete_address' addr.pk %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger"
+                        style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">Sil</button>
+                </form>
+            </div>
+            <div class="address-card-body">
+                {{ addr.district.name }} / {{ addr.city.name }}<br>
+                {{ addr.address_line }}
+            </div>
+        </div>
+        {% empty %}
+        <p style="color: var(--text-muted);">Henüz kayıtlı adresiniz yok.</p>
+        {% endfor %}
+
+        <!-- Add Address Card -->
+        <div class="address-card" style="border-style: dashed;">
+            <form method="post" action="{% url 'accounts:add_address' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <input type="text" name="title" class="form-control" placeholder="Adres başlığı (Dükkan, Ev...)"
+                        required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <select name="city" class="form-select" id="dashCitySelect"
+                            onchange="loadDistrictsDash(this.value)" required>
+                            <option value="">İl seçin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <select name="district" class="form-select" id="dashDistrictSelect" required>
+                            <option value="">İlçe seçin</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <textarea name="address_line" class="form-control" rows="2" placeholder="Açık adres"
+                        required></textarea>
+                </div>
+                <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 0.3rem;">
+                    <input type="checkbox" name="is_default"> Varsayılan adres olarak ayarla
+                </label>
+                <button type="submit" class="btn btn-primary btn-block mt-1">+ Adres Ekle</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <h2 style="font-size: 1.2rem; margin: 2rem 0 1rem;">📦 Son Siparişlerim</h2>
+    {% if orders %}
+    <table class="cart-table">
+        <thead>
+            <tr>
+                <th>Sipariş No</th>
+                <th>Tarih</th>
+                <th>Durum</th>
+                <th>Toplam</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td><strong>{{ order.order_number }}</strong></td>
+                <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                <td><span class="badge badge-info">{{ order.get_status_display }}</span></td>
+                <td><strong>{{ order.total|floatformat:2 }} ₺</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: var(--text-muted);">Henüz siparişiniz yok.</p>
+    {% endif %}
+</div>
+
+<script>
+    // Dashboard city/district loader
+    fetch('/lokasyon/ilceler/0/') // dummy to get cities
+    document.addEventListener('DOMContentLoaded', function () {
+        var citySelect = document.getElementById('dashCitySelect');
+        // Load cities from the popup script data
+        fetch('/lokasyon/ilceler/0/').catch(() => { });
+        // Actually we need to populate cities - use a different approach
+        var cityData = {{ cities_json|default: "[]" | safe
+    }};
+});
+
+    function loadDistrictsDash(cityId) {
+        var select = document.getElementById('dashDistrictSelect');
+        select.innerHTML = '<option value="">Yükleniyor...</option>';
+        if (!cityId) { select.innerHTML = '<option value="">İlçe seçin</option>'; return; }
+        fetch('/lokasyon/ilceler/' + cityId + '/')
+            .then(r => r.json())
+            .then(data => {
+                select.innerHTML = '<option value="">İlçe seçin</option>';
+                data.districts.forEach(d => {
+                    select.innerHTML += '<option value="' + d.id + '">' + d.name + '</option>';
+                });
+            });
+    }
+</script>
+{% endblock %}

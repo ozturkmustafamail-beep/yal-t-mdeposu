@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Giriş Yap{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <h1 class="auth-title">👋 Giriş Yap</h1>
+        <p class="auth-subtitle">Hesabınıza giriş yapın</p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Kullanıcı Adı</label>
+                <input type="text" name="username" class="form-control" placeholder="Kullanıcı adınız" required
+                    autofocus>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Şifre</label>
+                <input type="password" name="password" class="form-control" placeholder="Şifreniz" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg btn-block">Giriş Yap</button>
+        </form>
+
+        <p class="text-center mt-2" style="font-size: 0.85rem; color: var(--text-secondary);">
+            Hesabınız yok mu? <a href="{% url 'accounts:register' %}">Ücretsiz üye olun</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

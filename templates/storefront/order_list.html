@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Siparişlerim{% endblock %}
+
+{% block content %}
+<div class="cart-page">
+    <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;">📦 Siparişlerim</h1>
+
+    {% if orders %}
+    <table class="cart-table">
+        <thead>
+            <tr>
+                <th>Sipariş No</th>
+                <th>Tarih</th>
+                <th>Durum</th>
+                <th>Toplam</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td><strong>{{ order.order_number }}</strong></td>
+                <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                <td><span class="badge badge-info">{{ order.get_status_display }}</span></td>
+                <td><strong>{{ order.total|floatformat:2 }} ₺</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="text-center" style="padding: 4rem;">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">📦</div>
+        <h2 style="font-size: 1.3rem; color: var(--text-secondary);">Henüz siparişiniz yok</h2>
+        <a href="{% url 'products:list' %}" class="btn btn-primary btn-lg mt-2">🛍️ Alışverişe Başla</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

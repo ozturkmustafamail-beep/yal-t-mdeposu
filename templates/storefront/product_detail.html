@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="product-detail">
+    <!-- Product Image -->
+    <div class="product-image-main">
+        {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.name }}">
+        {% else %}
+        <span style="font-size: 1rem; color: var(--text-muted);">Ürün görseli yakında eklenecek</span>
+        {% endif %}
+    </div>
+
+    <!-- Product Info -->
+    <div class="product-info">
+        <span class="product-brand-tag">{{ product.brand.name }}</span>
+        <h1 class="product-title">{{ product.name }}</h1>
+
+        {% if product.description %}
+        <p class="product-desc">{{ product.description }}</p>
+        {% endif %}
+
+        <!-- Mode Switcher -->
+        <div class="mode-switcher">
+            {% for mode_key, mode_price in all_prices.items %}
+            <div class="mode-tab {% if current_mode == mode_key %}active{% endif %} {% if mode_key != 'ADET' and not user.is_authenticated %}locked{% endif %}"
+                {% if mode_key == 'ADET' or user.is_authenticated %} onclick="window.location.href='?mode={{ mode_key }}'"
+                {% endif %}>
+                <div class="mode-tab-name">
+                    {% if mode_key == 'ADET' %}Adet
+                    {% elif mode_key == 'PALET' %}Palet
+                    {% elif mode_key == 'TIR' %}Tır
+                    {% endif %}
+                </div>
+                <div class="mode-tab-price">{{ mode_price.unit_price|floatformat:2 }} ₺</div>
+                <div class="mode-tab-info">
+                    {% if mode_key == 'ADET' %}KDV + nakliye dahil
+                    {% else %}KDV hariç, nakliye hariç{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if not user.is_authenticated and product.has_palet %}
+            <div class="mode-tab locked" title="Üye olunca görebilirsiniz">
+                <div class="mode-tab-name">Palet</div>
+                <div class="mode-tab-price" style="font-size: 0.82rem;">Üye ol & gör</div>
+                <div class="mode-tab-info">Toptan net fiyat</div>
+            </div>
+            {% endif %}
+
+            {% if not user.is_authenticated and product.has_tir %}
+            <div class="mode-tab locked" title="Üye olunca görebilirsiniz">
+                <div class="mode-tab-name">Tır</div>
+                <div class="mode-tab-price" style="font-size: 0.82rem;">Üye ol & gör</div>
+                <div class="mode-tab-info">Proje dip fiyat</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Price Display -->
+        <div class="price-display">
+            <div class="price-display-main">
+                {% if price.is_plus_discount %}
+                <span style="text-decoration: line-through; font-size: 1rem; color: var(--text-muted);">
+                    {{ price.original_price|floatformat:2 }} ₺
+                </span>
+                <span class="plus-badge-inline">PLUS -%{{ price.discount_percent }}</span>
+                <br>
+                {% endif %}
+                {{ price.unit_price|floatformat:2 }} <span class="currency">₺</span>
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">/ {{ product.unit }}</span>
+            </div>
+
+            <div class="price-display-info">
+                {% if price.kdv_included %}
+                KDV dahil fiyat
+                {% else %}
+                KDV hariç fiyat
+                {% endif %}
+                {% if price.shipping_included %}
+                · Nakliye dahil
+                {% else %}
+                · Nakliye hariç
+                {% endif %}
+            </div>
+
+            {% if price.kdv_amount %}
+            <div class="price-display-info subtle">
+                KDV tutarı: {{ price.kdv_amount|floatformat:2 }} ₺
+                {% if price.ambar_fee %}
+                · Tahmini ambar: {{ price.ambar_fee|floatformat:2 }} ₺
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if price.ambar_note %}
+            <div class="price-display-info subtle">{{ price.ambar_note }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Order Form -->
+        <form method="post" action="{% url 'orders:add_to_cart' product.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="mode" value="{{ current_mode }}">
+            <div class="form-group">
+                <label class="form-label">Miktar ({{ product.unit }})</label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="number" name="quantity" value="{{ quantity }}"
+                        min="{% if current_mode == 'PALET' %}{{ product.palet_quantity }}{% elif current_mode == 'TIR' %}{{ product.tir_quantity }}{% else %}{{ product.min_order_adet }}{% endif %}"
+                        {% if current_mode == 'PALET' %}step="{{ product.palet_quantity }}" {% elif current_mode == 'TIR'
+                        %}step="{{ product.tir_quantity }}" {% endif %} class="form-control" style="max-width: 150px;">
+                    <span style="font-size: 0.82rem; color: var(--text-secondary);">
+                        Min:
+                        {% if current_mode == 'PALET' %}{{ product.palet_quantity }}
+                        {% elif current_mode == 'TIR' %}{{ product.tir_quantity }}
+                        {% else %}{{ product.min_order_adet }}
+                        {% endif %} {{ product.unit }}
+                    </span>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block">
+                Sepete Ekle
+            </button>
+        </form>
+
+        <!-- Product Specs -->
+        {% if product.specifications %}
+        <div style="margin-top: 1.5rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.6rem;">Teknik Özellikler</h3>
+            <div
+                style="background: var(--bg-subtle); border-radius: var(--radius); padding: 0.8rem; border: 1px solid var(--border-light);">
+                {% for spec in product.specifications.splitlines %}
+                {% if spec.strip %}
+                <div style="padding: 0.35rem 0; border-bottom: 1px solid var(--border-light); font-size: 0.82rem;">
+                    {{ spec }}
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not user.is_authenticated %}
+        <div class="alert alert-info mt-3">
+            <strong>Toptan fiyatları görmek için</strong>
+            <a href="{% url 'accounts:register' %}">ücretsiz üye olun</a>.
+            Palet ve tır bazlı indirimli fiyatlar sadece üyelere gösterilir.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

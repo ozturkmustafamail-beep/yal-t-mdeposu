@@ -1,0 +1,209 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Yalıtım Deposu — Türkiye'nin dijital toptancısı. Nalbur ve ustalar için adet, palet ve tır bazlı uygun fiyatlarla yalıtım malzemeleri.">
+    <title>{% block title %}Yalıtım Deposu{% endblock %} | Yalitimdeposu.com</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div class="topbar-inner">
+            <div class="topbar-left">
+                <span>Türkiye'nin 81 iline teslimat</span>
+                <span>|</span>
+                <span>0212 123 45 67</span>
+            </div>
+            <div class="topbar-right">
+                {% if user.is_authenticated %}
+                {% if user.is_plus %}
+                <span class="topbar-plus">PLUS ÜYE — {{ user.plus_days_remaining }} gün</span>
+                {% endif %}
+                <a href="{% url 'accounts:dashboard' %}">Hesabım</a>
+                <a href="{% url 'orders:order_list' %}">Siparişlerim</a>
+                <a href="{% url 'accounts:logout' %}">Çıkış</a>
+                {% else %}
+                <a href="{% url 'accounts:login' %}">Giriş Yap</a>
+                <a href="{% url 'accounts:register' %}">Ücretsiz Üye Ol</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <header class="main-header">
+        <div class="header-inner">
+            <!-- Logo -->
+            <a href="{% url 'products:home' %}" class="header-logo">
+                <img src="{% static 'img/logo.png' %}" alt="Yalıtım Deposu" class="header-logo-img">
+            </a>
+
+            <!-- Search Bar -->
+            <div class="header-search">
+                <form method="get" action="{% url 'products:list' %}" class="search-form">
+                    <select name="category" class="search-select">
+                        <option value="">Tüm Kategoriler</option>
+                        {% for cat in all_categories %}
+                        <option value="{{ cat.slug }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="q" placeholder="Ürün, marka veya kategori ara..." class="search-input"
+                        value="{{ search_query|default:'' }}">
+                    <button type="submit" class="search-btn">Ara</button>
+                </form>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="header-actions">
+                <!-- Location Selector -->
+                <div class="header-action" id="changeCityBtn" title="Teslimat bölgesini değiştir">
+                    <div class="action-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                        </svg>
+                    </div>
+                    <div class="action-text">
+                        <small>Teslimat Bölgesi</small>
+                        <strong>{% if selected_city %}{{ selected_city.name }}{% if selected_district %} / {{
+                            selected_district.name }}{% endif %}{% else %}Bölge Seçin{% endif %}</strong>
+                    </div>
+                </div>
+                <!-- Cart -->
+                <a href="{% url 'orders:cart' %}" class="header-action header-cart">
+                    <div class="action-icon">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="9" cy="21" r="1" />
+                            <circle cx="20" cy="21" r="1" />
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                        </svg>
+                    </div>
+                    <div class="action-text">
+                        <small>Sepetim</small>
+                        <strong>{% if cart_count %}{{ cart_count }} Ürün{% else %}Boş{% endif %}</strong>
+                    </div>
+                    {% if cart_count %}<span class="header-cart-count">{{ cart_count }}</span>{% endif %}
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Category Navigation -->
+    <nav class="category-nav">
+        <div class="category-nav-inner">
+            <a href="{% url 'products:list' %}" class="cat-nav-item">Tüm Ürünler</a>
+            {% for cat in all_categories %}
+            <a href="{% url 'products:list' %}?category={{ cat.slug }}" class="cat-nav-item">
+                {{ cat.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </nav>
+
+    <!-- Toast Notifications -->
+    {% if messages %}
+    <div class="toast-container" id="toastContainer">
+        {% for message in messages %}
+        <div class="toast toast-{{ message.tags }}" role="alert">
+            <div class="toast-icon">
+                {% if message.tags == 'success' %}&#10003;{% elif message.tags == 'warning' %}!{% elif message.tags ==
+                'error' %}&#10005;{% else %}i{% endif %}
+            </div>
+            <span>{{ message }}</span>
+            <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-main">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <img src="{% static 'img/logo.png' %}" alt="Yalıtım Deposu"
+                        style="height: 44px; margin-bottom: 1rem; filter: brightness(0) invert(1);">
+                    <p>
+                        Türkiye'nin dijital toptancısı. Nalbur ve ustalar için
+                        adet, palet ve tır bazlı uygun fiyatlarla yalıtım malzemeleri.
+                    </p>
+                </div>
+                <div class="footer-col">
+                    <h4>Kategoriler</h4>
+                    {% for cat in all_categories %}
+                    <a href="{% url 'products:list' %}?category={{ cat.slug }}">{{ cat.name }}</a>
+                    {% endfor %}
+                </div>
+                <div class="footer-col">
+                    <h4>Kurumsal</h4>
+                    <a href="#">Hakkımızda</a>
+                    <a href="#">Nasıl Çalışır?</a>
+                    <a href="#">Plus Üyelik</a>
+                    <a href="#">İade & İptal Koşulları</a>
+                </div>
+                <div class="footer-col">
+                    <h4>İletişim</h4>
+                    <a href="mailto:info@yalitimdeposu.com">info@yalitimdeposu.com</a>
+                    <a href="tel:+902121234567">0212 123 45 67</a>
+                    <a href="#">Canlı Destek</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>&copy; 2026 Yalıtım Deposu. Tüm hakları saklıdır.</span>
+            <div class="footer-payment-icons">
+                <span>Visa</span>
+                <span>Mastercard</span>
+                <span>Havale/EFT</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Location Selection Popup -->
+    {% if not location_selected %}
+    <div class="location-popup-overlay" id="locationPopup">
+        <div class="location-popup">
+            <h2>Teslimat Bölgenizi Seçin</h2>
+            <p>Size en uygun fiyat ve nakliye bilgilerini gösterebilmemiz için teslimat bölgenizi seçin.</p>
+            <div class="form-group">
+                <input type="text" id="citySearchInput" placeholder="Şehir adı yazın..." class="form-control"
+                    autocomplete="off">
+            </div>
+            <div class="city-list" id="cityList">
+                <!-- JS ile doldurulacak -->
+            </div>
+            <div id="districtSection" style="display:none; margin-top: 1rem;">
+                <label class="form-label">İlçe Seçin</label>
+                <select id="districtSelect" class="form-select">
+                    <option value="">İlçe seçin...</option>
+                </select>
+                <button id="confirmLocationBtn" class="btn btn-primary btn-block mt-2"
+                    style="margin-top: 1rem;">Onayla</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <script src="{% static 'js/location.js' %}"></script>
+    <script>
+        // Auto-remove toasts after 4 seconds
+        document.querySelectorAll('.toast').forEach(function (toast) {
+            setTimeout(function () { toast.remove(); }, 4000);
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>
